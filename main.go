@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -40,6 +41,7 @@ func getServiceFilePath(serviceName string) (filePath string) {
 
 func checkUnitFile(filePath string) (result *bool) {
 	var file, fileError = os.OpenFile(filePath, 0, os.ModePerm)
+	defer file.Close()
 	if fileError == nil {
 		var unitInfo, unitError = unit.DeserializeOptions(file)
 		if unitError == nil {
@@ -67,6 +69,8 @@ func insertMergeMemory(lines []string) (outputLines []string) {
 
 func enableMergeMemory(filePath string) error {
 	var bytes, fileError = os.ReadFile(filePath)
+	var permissions = assertResultError(os.Stat(filePath))
+	var backupBytes = bytes
 	if fileError != nil {
 		return fileError
 	}
@@ -74,7 +78,20 @@ func enableMergeMemory(filePath string) error {
 	var lines = strings.Split(text, "\n")
 	lines = insertMergeMemory(lines)
 	text = strings.Join(lines, "\n")
-	println(text)
+	bytes = []byte(text)
+	var writeError = os.WriteFile(filePath, bytes, permissions.Mode())
+	if writeError != nil {
+		return writeError
+	}
+
+	var status = checkUnitFile(filePath)
+	if status == nil || !*status {
+		var writeError = os.WriteFile(filePath, backupBytes, permissions.Mode())
+		if writeError != nil {
+			return writeError
+		}
+		return errors.New("sanity check failed, restoring backup")
+	}
 	return nil
 }
 
@@ -97,5 +114,12 @@ func main() {
 			}
 		}
 		fmt.Printf("[%v] %v\n", status, filePath)
+		if memoryEnabled != nil && !*memoryEnabled {
+			var error = enableMergeMemory(filePath)
+			if error != nil {
+				log.Println(error)
+			}
+		}
+		break
 	}
 }
