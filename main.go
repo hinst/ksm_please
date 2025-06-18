@@ -104,22 +104,22 @@ func main() {
 			continue
 		}
 		var memoryEnabled = checkUnitFile(filePath)
-		var status = "x"
+		var status = "?"
 		if memoryEnabled != nil {
 			status = " "
 			if *memoryEnabled {
 				status = "Y"
 			} else {
-				enableMergeMemory(filePath)
+				var error = enableMergeMemory(filePath)
+				if error == nil {
+					status = "+"
+				} else {
+					status = "x"
+					log.Println(error)
+				}
 			}
 		}
 		fmt.Printf("[%v] %v\n", status, filePath)
-		if memoryEnabled != nil && !*memoryEnabled {
-			var error = enableMergeMemory(filePath)
-			if error != nil {
-				log.Println(error)
-			}
-		}
 		break
 	}
 }
