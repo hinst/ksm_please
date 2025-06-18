@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os/exec"
 	"regexp"
@@ -25,13 +26,12 @@ func getAllServices() (serviceNames []string) {
 }
 
 func getServiceStatus(serviceName string) {
-	var output, commandError = exec.Command("systemctl", "status", serviceName).Output()
-	var text = string(output)
-	if commandError == nil {
-		log.Println(text)
-	} else {
-		log.Println("Cannot read " + serviceName)
-		log.Println("error: " + text)
+	var filePathMatcher = regexp.MustCompile(`Loaded: loaded \((\S+);`)
+	var output, _ = exec.Command("systemctl", "status", serviceName).Output()
+	var filePaths = filePathMatcher.FindSubmatch(output)
+	if len(filePaths) > 1 {
+		var filePath = string(filePaths[1])
+		fmt.Println(filePath)
 	}
 }
 
