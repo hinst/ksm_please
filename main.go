@@ -41,18 +41,41 @@ func getServiceFilePath(serviceName string) (filePath string) {
 func checkUnitFile(filePath string) (result *bool) {
 	var file, fileError = os.OpenFile(filePath, 0, os.ModePerm)
 	if fileError == nil {
-		var unitInfo, unitError = unit.Deserialize(file)
+		var unitInfo, unitError = unit.DeserializeOptions(file)
 		if unitError == nil {
 			var memoryEnabled = false
 			result = &memoryEnabled
 			for _, unitValue := range unitInfo {
 				if unitValue.Section == "Service" && unitValue.Name == "MemoryKSM" {
-					memoryEnabled = true
+					memoryEnabled = unitValue.Value == "true"
 				}
 			}
 		}
 	}
 	return
+}
+
+func insertMergeMemory(lines []string) (outputLines []string) {
+	for _, line := range lines {
+		outputLines = append(outputLines, line)
+		if strings.TrimSpace(line) == "[Service]" {
+			outputLines = append(outputLines, "MemoryKSM=true")
+		}
+	}
+	return
+}
+
+func enableMergeMemory(filePath string) error {
+	var bytes, fileError = os.ReadFile(filePath)
+	if fileError != nil {
+		return fileError
+	}
+	var text = string(bytes)
+	var lines = strings.Split(text, "\n")
+	lines = insertMergeMemory(lines)
+	text = strings.Join(lines, "\n")
+	println(text)
+	return nil
 }
 
 func main() {
@@ -69,6 +92,8 @@ func main() {
 			status = " "
 			if *memoryEnabled {
 				status = "Y"
+			} else {
+				enableMergeMemory(filePath)
 			}
 		}
 		fmt.Printf("[%v] %v\n", status, filePath)
