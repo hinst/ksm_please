@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func getAllServices() []string {
+func getAllServices() (serviceNames []string) {
 	var matcher = regexp.MustCompile(`\s[\S-]+`)
 	var allUnitsText = string(assertResultError(exec.Command("systemctl", "list-units", "--type=service", "--all").Output()))
 	for index, unitText := range strings.Split(allUnitsText, "\n") {
@@ -17,14 +17,28 @@ func getAllServices() []string {
 		if index == 0 {
 			continue
 		}
-		var unitName = matcher.FindString(unitText)
-		unitName = strings.TrimSpace(unitName)
-		log.Println(unitName)
+		var serviceName = matcher.FindString(unitText)
+		serviceName = strings.TrimSpace(serviceName)
+		serviceNames = append(serviceNames, serviceName)
 	}
-	return nil
+	return
+}
+
+func getServiceStatus(serviceName string) {
+	var output, commandError = exec.Command("systemctl", "status", serviceName).Output()
+	var text = string(output)
+	if commandError == nil {
+		log.Println(text)
+	} else {
+		log.Println("Cannot read " + serviceName)
+		log.Println("error: " + text)
+	}
 }
 
 func main() {
 	log.Println("STARTING")
-	getAllServices()
+	var allServices = getAllServices()
+	for _, serviceName := range allServices {
+		getServiceStatus(serviceName)
+	}
 }
