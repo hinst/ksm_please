@@ -14,4 +14,4 @@ Next step is to edit systemd unit files:
     [Service]
     MemoryKMS=true
 
-There are many unit files, therefore I write a program to update all unit files automatically.
+There are many unit files, therefore I write a program to update all unit files automatically. See `main.go`
