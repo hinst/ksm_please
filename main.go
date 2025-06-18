@@ -38,19 +38,21 @@ func getServiceFilePath(serviceName string) (filePath string) {
 	return
 }
 
-func updateUnit(filePath string) {
-	var file, fileError2 = os.OpenFile(filePath, 0, os.ModePerm)
-	if fileError2 == nil {
-		fmt.Println(filePath)
+func checkUnitFile(filePath string) (result *bool) {
+	var file, fileError = os.OpenFile(filePath, 0, os.ModePerm)
+	if fileError == nil {
 		var unitInfo, unitError = unit.Deserialize(file)
 		if unitError == nil {
+			var memoryEnabled = false
+			result = &memoryEnabled
 			for _, unitValue := range unitInfo {
 				if unitValue.Section == "Service" && unitValue.Name == "MemoryKSM" {
-					fmt.Println("MemoryKSM")
+					memoryEnabled = true
 				}
 			}
 		}
 	}
+	return
 }
 
 func main() {
@@ -58,6 +60,17 @@ func main() {
 	var allServices = getAllServices()
 	for _, serviceName := range allServices {
 		var filePath = getServiceFilePath(serviceName)
-		updateUnit(filePath)
+		if len(filePath) == 0 {
+			continue
+		}
+		var memoryEnabled = checkUnitFile(filePath)
+		var status = "x"
+		if memoryEnabled != nil {
+			status = " "
+			if *memoryEnabled {
+				status = "Y"
+			}
+		}
+		fmt.Printf("[%v] %v\n", status, filePath)
 	}
 }
