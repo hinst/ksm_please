@@ -8,6 +8,7 @@
     1. Increase `KSM_THRES_COEF`, because KSM will stay disabled when memory usage is below this threshold, and with pagefile enabled, KSM might stay off forever
 
 * View merged memory page statistics: run command `grep . /sys/kernel/mm/ksm/*`.
+    * In the statistics, pay attention to field `general_profit`. It shows how many bytes were saved by KSM. Expect around 3%...5% savings.
 * Use zero pages: `/sys/kernel/mm/ksm/use_zero_pages:0`, it is best to leave this option DISABLED because it breaks statistics.
 
 ## Systemd setup
