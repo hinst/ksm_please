@@ -120,6 +120,5 @@ func main() {
 			}
 		}
 		fmt.Printf("[%v] %v\n", status, filePath)
-		break
 	}
 }
